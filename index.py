@@ -60,7 +60,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 
 @app.post('/get-login-otp')
 def getOTP(phone):
-    user = conn.local.vendor.find_one({"phone_number": phone})
+    user = conn.dirums.vendor.find_one({"phone_number": phone})
     if not user:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return get_otp(user)
@@ -68,7 +68,7 @@ def getOTP(phone):
 
 @app.post('/verify-otp')
 def verifyOTP(phone, otp):
-    user = conn.local.vendor.find_one({"phone_number": phone})
+    user = conn.dirums.vendor.find_one({"phone_number": phone})
     if not user:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     isValid = verify_otp(otp, user)
