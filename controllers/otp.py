@@ -27,7 +27,7 @@ def is_otp_valid(otp):
         current_time = time.time()
         print(current_time)
         if current_time - otp_time > 600:
-            conn.local.otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
+            conn.dirums.otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
             return False
         else:
             return True
@@ -35,19 +35,19 @@ def is_otp_valid(otp):
 # Define a function to generate and return a new OTP for a given user
 def get_otp(user):
     # Check if the user already has a valid OTP
-    otp_dict = serializerList(conn.local.otp.find({"issued_to": user}).sort('_id', pymongo.DESCENDING))
+    otp_dict = serializerList(conn.dirums.otp.find({"issued_to": user}).sort('_id', pymongo.DESCENDING))
     if otp_dict and otp_dict[0]['issued_to'] == user and is_otp_valid(otp_dict[0]['code']):
        print(otp_dict[0]['code'])
        return {"otp sent"}
     
     # Generate a new OTP for the user
     otp = generate_otp()
-    conn.local.otp.insert_one({'code': otp, "issued_to": user, "expiry_time": time.time() + 600, 'expired': False})
+    conn.dirums.otp.insert_one({'code': otp, "issued_to": user, "expiry_time": time.time() + 600, 'expired': False})
     print(otp)
     return {"otp sent"}
 
 def verify_otp(otp, user):
-    otp_dict = serializerList(conn.local.otp.find({"code": otp}).sort('_id', pymongo.DESCENDING))
+    otp_dict = serializerList(conn.dirums.otp.find({"code": otp}).sort('_id', pymongo.DESCENDING))
     print(otp_dict)
     if otp_dict and otp != otp_dict[0]['code']:
         return False, "Invalid OTP"
@@ -58,5 +58,5 @@ def verify_otp(otp, user):
     elif not is_otp_valid(otp):
         return False, "OTP has expired"
     else:
-        conn.local.otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
+        conn.dirums.otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
         return True, "OTP verified"
