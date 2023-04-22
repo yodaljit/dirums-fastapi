@@ -19,8 +19,8 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 origins = [
-    "http://localhost", 
-    "http://127.0.0.1", 
+    "http://localhost:3000", 
+    "http://127.0.0.1:3000", 
     "https://dirums-fastapi.vercel.app", 
     "https://dirums-final.vercel.app"
 ]
