@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["Authorization", 'Content-Type', 'Range'],
 )
 # Enable TrustedHost middleware to validate the host header
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app"])
 
 # Define a custom middleware to protect certain routes
 # @app.middleware("http")
