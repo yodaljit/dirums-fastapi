@@ -17,7 +17,7 @@ def generate_otp():
 
 # Define a function to check if an OTP has timed out
 def is_otp_valid(otp):
-    otp_dict = serializerList(conn.local.otp.find({"code": otp}))
+    otp_dict = serializerList(conn.dirums.otp.find({"code": otp}))
     print(otp_dict)
     if not otp_dict or otp_dict[0]['expired'] == True:
         return False
