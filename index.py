@@ -27,7 +27,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["Authorization", 'Content-Type', 'Range'],
+    allow_headers=["*"],
 )
 # Enable TrustedHost middleware to validate the host header
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app"])
