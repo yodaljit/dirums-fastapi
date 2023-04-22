@@ -19,10 +19,9 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 origins = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000", 
-    "https://dirums-fastapi.vercel.app", 
-    "https://dirums-final.vercel.app"
+    "https://dirums-fastapi.vercel.app",
+    "https://dirums-final.vercel.app",
+    "http://65.0.124.105"
 ]
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 app.add_middleware(
@@ -33,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # Enable TrustedHost middleware to validate the host header
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app", "65.0.124.105"])
 
 # Define a custom middleware to protect certain routes
 # @app.middleware("http")
