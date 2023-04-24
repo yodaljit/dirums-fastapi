@@ -45,5 +45,6 @@ tldextract==3.1.0
 twilio==7.9.1
 typing_extensions==4.5.0
 urllib3==1.26.15
+uuid==1.30
 uvicorn==0.21.1
 wrapt==1.15.0
