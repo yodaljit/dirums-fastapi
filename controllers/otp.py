@@ -32,6 +32,23 @@ def is_otp_valid(otp):
         else:
             return True
 
+# Define a function to check if an OTP has timed out
+def is_register_otp_valid(otp):
+    otp_dict = serializerList(conn.dirums.register_otp.find({"code": otp}))
+    print(otp_dict)
+    if not otp_dict or otp_dict[0]['expired'] == True:
+        return False
+    else:
+        otp_time = otp_dict[0]['expiry_time']
+        print(otp_time)
+        current_time = time.time()
+        print(current_time)
+        if current_time - otp_time > 600:
+            conn.dirums.register_otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
+            return False
+        else:
+            return True
+
 # Define a function to generate and return a new OTP for a given user
 def get_otp(user):
     # Check if the user already has a valid OTP
@@ -43,6 +60,20 @@ def get_otp(user):
     # Generate a new OTP for the user
     otp = generate_otp()
     conn.dirums.otp.insert_one({'code': otp, "issued_to": user, "expiry_time": time.time() + 600, 'expired': False})
+    print(otp)
+    return {"otp sent"}
+
+# Define a function to generate and return a new OTP for a given user
+def get_register_otp(phone):
+    # Check if the user already has a valid OTP
+    otp_dict = serializerList(conn.dirums.register_otp.find({"issued_to": phone}).sort('_id', pymongo.DESCENDING))
+    if otp_dict and otp_dict[0]['issued_to'] == phone and is_otp_valid(otp_dict[0]['code']):
+       print(otp_dict[0]['code'])
+       return {"otp sent"}
+    
+    # Generate a new OTP for the user
+    otp = generate_otp()
+    conn.dirums.register_otp.insert_one({'code': otp, "issued_to": phone, "expiry_time": time.time() + 600, 'expired': False})
     print(otp)
     return {"otp sent"}
 
@@ -59,4 +90,19 @@ def verify_otp(otp, user):
         return False, "OTP has expired"
     else:
         conn.dirums.otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
+        return True, "OTP verified"
+
+def verify_register_otp(otp, phone):
+    otp_dict = serializerList(conn.dirums.register_otp.find({"code": otp}).sort('_id', pymongo.DESCENDING))
+    print(otp_dict)
+    if otp_dict and otp != otp_dict[0]['code']:
+        return False, "Invalid OTP"
+    elif otp_dict and otp_dict[0]['issued_to'] != phone:
+        return False, "OTP does not match user"
+    elif not otp_dict:
+        return False, "Invalid OTP"
+    elif not is_register_otp_valid(otp):
+        return False, "OTP has expired"
+    else:
+        conn.dirums.register_otp.find_one_and_update({'_id': ObjectId(otp_dict[0]['_id'])}, {"$set": dict({'expired': True})})
         return True, "OTP verified"

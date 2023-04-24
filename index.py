@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from config.index import conn
-from controllers.otp import get_otp, verify_otp
+from controllers.otp import get_otp, get_register_otp, verify_otp, verify_register_otp
 from jose import jwt, JWTError
 
 from schemas.index import SerailizerDict
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # Enable TrustedHost middleware to validate the host header
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app", "65.0.124.105"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["dirumshost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app", "65.0.124.105"])
 
 # Define a custom middleware to protect certain routes
 # @app.middleware("http")
@@ -62,7 +62,19 @@ def getOTP(phone):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return get_otp(user)
 
+@app.post('/get-register-otp')
+def getRegisterOTP(phone):
+    return get_register_otp(phone)
 
+@app.post('/verify-register-otp')
+def verifyRegisterOTP(phone, otp):
+    isValid = verify_register_otp(otp, phone)
+    if isValid[0]:
+        access_token = create_access_token(data={"sub": phone})
+        return {"access_token": access_token, "token_type": "bearer", 'message': 'OTP verified'}
+    else:
+        return isValid
+    
 @app.post('/verify-otp')
 def verifyOTP(phone, otp):
     user = conn.dirums.vendor.find_one({"phone_number": phone})
