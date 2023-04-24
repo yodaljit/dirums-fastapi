@@ -53,18 +53,26 @@ class Address(BaseModel):
     zipcode: Optional[str]
 
 class Vendor(BaseModel):
-    name: str
-    email: str
-    is_individual: bool
+    name: Optional[str]
+    email: Optional[str]
+    is_individual: Optional[bool]
     business_name: Optional[str]
     tax_id: Optional[str]
     website: Optional[str]
+    dob: Optional[str]
     phone_number: Optional[str]
     street: Optional[str]
     city: Optional[str]
     state: Optional[str]
     country: Optional[str]
     zipcode: Optional[str]
+    terms: Optional[str]
+    privacy: Optional[str]
+    shipping: Optional[str]
+    refund: Optional[str]
+    profile_step: Optional[bool]
+    address_step: Optional[bool]
+    terms_step: Optional[bool]
 
 class ProductImage(BaseModel):
     product_id: str
@@ -123,9 +131,20 @@ class OTP(BaseModel):
     expiry_time: str
     expired: Optional[bool]
 
+class RegisterOTP(BaseModel):
+    code: str
+    issued_to: str
+    expiry_time: str
+    expired: Optional[bool]
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+class Policy(BaseModel):
+    name: Optional[str]
+    policy: Optional[str]
+    slug: Optional[str]

@@ -7,11 +7,12 @@ from controllers.otp import get_otp, verify_otp
 from jwttoken import create_access_token
 from schemas.index import serializerList, SerailizerDict
 from config.index import conn
-from models.index import Product, Vendor, VendorLogin, Category, SubCategory, Medium, ProductImage
+from models.index import Product, Vendor, VendorLogin, Category, SubCategory, Medium, ProductImage, Policy
 from bson import ObjectId, json_util
 from oauth import oauth2_scheme
 import pymongo
 from uuid import uuid4
+import boto3
 products = APIRouter()
 
 # provide a method to create access tokens. The create_access_token()
@@ -28,6 +29,27 @@ products = APIRouter()
 @products.get('/')
 def get_products():
     return serializerList(conn.dirums.product.find())
+
+@products.get('/get-vendor/{id}')
+def get_vendors(id):
+    print(id)
+    return SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(id)}))
+
+
+@products.post('/create-vendor')
+def create_vendor(vendor: Vendor):
+    new_vendor = conn.dirums.vendor.insert_one(dict(vendor))
+    return {"message": "Vendor successfully created", "status": status.HTTP_200_OK, "vendor": SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(new_vendor.inserted_id)}))}
+
+@products.post('/register-address/{id}')
+def create_vendor(id, vendor: Vendor):
+    new_vendor = conn.dirums.vendor.find_one_and_update({"_id": ObjectId(id)}, {"$set": dict({"dob": vendor.dob, "street":vendor.street, "city": vendor.city, "state": vendor.state, "country": vendor.country, "zipcode": vendor.zipcode, "address_step": True})})
+    return {"message": "Address successfully added", "status": status.HTTP_200_OK, "vendor": SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(id)}))}
+
+@products.post('/register-save-tc/{id}')
+def accept_terms(id, vendor: Vendor):
+    conn.dirums.vendor.find_one_and_update({"_id": ObjectId(id)}, {"$set": dict({"terms": vendor.terms, "privacy": vendor.privacy, "shipping": vendor.shipping, "refund": vendor.refund, "terms_step": True})})
+    return {"message": "Terms and conditions successfully added", "status": status.HTTP_200_OK, "vendor": SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(id)}))}
 
 @products.get('/vendors/{id}/products')
 def all_products(id):
@@ -51,17 +73,17 @@ def add_product(id, product: Product):
     return serializerList(conn.dirums.product.find({"_id": ObjectId(prod.inserted_id)}))
 
 @products.post('/vendors/{id}/upload-file/{product_id}')
-def upload_file(id, product_id, request: Request, files: List[UploadFile]):
+async def upload_file(id, product_id, request: Request, files: List[UploadFile] | None = None):
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket('daljit25bucket')
     vendor = SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(id)}))
     images = []
     for file in files:
-        file_location = f"static/{uuid4()}-{file.filename}"
-        with open(file_location, "wb+") as file_object:
-            file_object.write(file.file.read())
-            pimg = conn.dirums.product_image.insert_one({'product_id': product_id, 'url': str(request.url_for('static', path=file.filename))})
-            images.append(serializerList(conn.dirums.product_image.find({'_id': ObjectId(pimg.inserted_id)}))[0])
-            print(serializerList(conn.dirums.product_image.find({'_id': ObjectId(pimg.inserted_id)})))
-            print(images)
+        contents = await file.read()
+        filename = str(uuid4())+"-"+file.filename
+        upload = bucket.put_object(Body=contents, Key=filename)
+        pimg = conn.dirums.product_image.insert_one({'product_id': product_id, 'url': str("https://dmjnuwplb0366.cloudfront.net/"+filename)})
+        images.append(serializerList(conn.dirums.product_image.find({'_id': ObjectId(pimg.inserted_id)}))[0])
     conn.dirums.product.find_one_and_update({"_id": ObjectId(product_id)}, {'$set': {'images': images}})
     return serializerList(conn.dirums.product.find({"vendor": vendor}))
 
@@ -147,3 +169,8 @@ def verifyOTP(phone, otp):
 def update_address(id, vendor: Vendor):
     conn.dirums.vendor.find_one_and_update({"_id": ObjectId(id)}, {"$set": dict(vendor)})
     return serializerList(conn.dirums.vendor.find({"_id": ObjectId(id)}))
+
+@products.post('/create-policy')
+def update_address(policy: Policy):
+    plo = conn.dirums.policy.insert_one(dict(policy))
+    return serializerList(conn.dirums.policy.find({"_id": ObjectId(plo.inserted_id)}))
