@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Request, status
+from fastapi import FastAPI, HTTPException, Depends, Request, status, Response
 from pydantic import BaseModel
 from routes.index import products
 from fastapi import Request, Depends
@@ -12,6 +12,9 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from config.index import conn
 from controllers.otp import get_otp, get_register_otp, verify_otp, verify_register_otp
 from jose import jwt, JWTError
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
+from typing import Callable, List
 
 from schemas.index import SerailizerDict
 
@@ -30,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # Enable TrustedHost middleware to validate the host header
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-final.vercel.app", "65.0.124.105"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "dirums-fastapi.vercel.app", "dirums-fastapi3.vercel.app", "dirums-final.vercel.app", "65.0.124.105"])
 
 # Define a custom middleware to protect certain routes
 # @app.middleware("http")
@@ -54,6 +57,22 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 #     # Call the next middleware or route handler if the request is allowed
 #     response = await call_next(request)
 #     return response
+
+class ValidationErrorLoggingRoute(APIRoute):
+    def get_route_handler(self) -> Callable:
+        original_route_handler = super().get_route_handler()
+
+        async def custom_route_handler(request: Request) -> Response:
+            try:
+                return await original_route_handler(request)
+            except RequestValidationError as exc:
+                body = await request.body()
+                detail = {"errors": exc.errors(), "body": body.decode()}
+                raise HTTPException(status_code=422, detail=detail)
+
+        return custom_route_handler
+    
+app.router.route_class = ValidationErrorLoggingRoute
 
 @app.post('/get-login-otp')
 def getOTP(phone):
