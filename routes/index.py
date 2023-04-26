@@ -73,7 +73,7 @@ def add_product(id, product: Product):
     return serializerList(conn.dirums.product.find({"_id": ObjectId(prod.inserted_id)}))
 
 @products.post('/vendors/{id}/upload-file/{product_id}')
-async def upload_file(id, product_id, request: Request, files: List[UploadFile] | None = None):
+async def upload_file(id, product_id, request: Request, files: List[UploadFile]):
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('daljit25bucket')
     vendor = SerailizerDict(conn.dirums.vendor.find_one({"_id": ObjectId(id)}))
